@@ -59,19 +59,41 @@ def get_source(name):
     filehash=hashlib.sha256(upload.getvalue()).hexdigest()
     state_key=f'{name}_ocr_hash'
     edit_key=f'{name}_ocr_edit'
+    info_key=f'{name}_ocr_info'
+    confirm_key=f'{name}_ocr_confirm'
+    # Yalnız tamamlanmış OCR əməliyyatını yadda saxla.
+    # Əvvəlki kod hash-i OCR-dən ƏVVƏL yazırdı: Streamlit rerun
+    # emalı kəsəndə növbəti açılışda OCR təkrarlanmırdı.
     if st.session_state.get(state_key)!=filehash:
-        st.session_state[state_key]=filehash
         st.session_state[edit_key]=''
-        st.session_state[f'{name}_ocr_confirm']=False
+        st.session_state[confirm_key]=False
+        st.session_state[info_key]='Yeni şəkil — OCR hələ başlamayıb.'
+    retry=st.button(f'🔄 {name}: OCR-ni yenidən oxu',key=f'{name}_ocr_retry',help='OCR boş qalanda və ya yarımçıq kəsiləndə bas.')
+    if retry or st.session_state.get(state_key)!=filehash:
+        st.session_state[info_key]='OCR başladıldı...'
         try:
+            import shutil as _shutil
+            import pytesseract as _pt
+            if not _shutil.which('tesseract'):
+                raise RuntimeError('Tesseract sistemdə tapılmadı. Streamlit Cloud-da packages.txt içində tesseract-ocr olmalıdır.')
             from ocr_engine import extract_image
             with st.spinner(f'{name}: KPC sütunları oxunur...'):
                 result=extract_image(upload.getvalue())
             st.session_state[edit_key]=result['text']
-            st.session_state[f'{name}_ocr_info']=f"{result['method']} · {len(result['numbers'])} sətir namizədi"
+            n=len(result['numbers'])
+            st.session_state[info_key]=f"{result['method']} · {n} nömrə namizədi"
+            st.session_state[state_key]=filehash  # uğurla bitəndən SONRA
+            st.session_state[confirm_key]=False
         except Exception as ex:
-            st.session_state[f'{name}_ocr_info']=f'OCR işləmədi: {type(ex).__name__}: {ex}'
-    st.caption('OCR: '+st.session_state.get(f'{name}_ocr_info',''))
+            st.session_state[info_key]=f'OCR XƏTASI: {type(ex).__name__}: {ex}'
+            st.session_state[state_key]=filehash  # xəta üçün retry düyməsi var
+    info=st.session_state.get(info_key,'OCR statusu bilinmir. Yenidən oxu düyməsini bas.')
+    if info.startswith('OCR XƏTASI'):
+        st.error(info)
+    elif st.session_state.get(edit_key,'').strip():
+        st.success('OCR: '+info)
+    else:
+        st.warning('OCR: '+info+' — nəticə boşdur. Yenidən oxu və ya nömrələri əl ilə daxil et.')
     st.warning('OCR səhv oxuya, nömrələri ötürə bilər. Ekrandakı KPC-ləri şəkil ilə sətir-sətir yoxla; çatışmayanları əlavə et. Tarixləri daxil etmə.')
     text=st.text_area(f'{name}: OCR nəticəsi (redaktə oluna bilər)',height=185,key=edit_key)
     confirmed=st.checkbox(f'{name}: şəkildəki BÜTÜN KPC nömrələrini orijinalla tutuşdurdum və təsdiqləyirəm',key=f'{name}_ocr_confirm')
