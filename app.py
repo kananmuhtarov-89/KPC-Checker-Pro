@@ -1,4 +1,4 @@
-"""KPC Checker Pro V9.2 — 2/3 lists, multiple files per list, OCR confirmations."""
+"""KPC Checker Pro V9.3 — 2/3 lists, multiple files per list, OCR confirmations."""
 from __future__ import annotations
 import hashlib
 import io
@@ -9,8 +9,8 @@ import pandas as pd
 import streamlit as st
 from kpc_core import parse_text, compare
 
-st.set_page_config(page_title='KPC Checker Pro V9.2', page_icon='🔎', layout='wide')
-st.title('🔎 KPC Checker Pro V9.2')
+st.set_page_config(page_title='KPC Checker Pro V9.3', page_icon='🔎', layout='wide')
+st.title('🔎 KPC Checker Pro V9.3')
 st.caption('KPC V6.2 · A/B/C-dən istənilən ikisi və ya üçü · Hər siyahıya çoxsaylı şəkil / TXT / CSV / Excel')
 st.info('Hər siyahı üçün **Mətn** və ya **Fayllar** seç. Fayllar rejimində bir neçə şəkil və ya başqa fayl yükləyə bilərsən. PDF qəbul edilmir.')
 
@@ -85,14 +85,15 @@ def image_text(data: bytes, label: str, identifier: str) -> tuple[str, bool]:
         st.warning('OCR nəticəsi boşdur. Təkrar oxu və ya nömrələri əl ilə daxil et.')
     st.caption('Yalnız bu şəklin KPC nömrələrini saxla; tarixləri sil. Şəkildəki bütün nömrələri orijinal ilə tutuşdur.')
     edited = st.text_area(f'{label}: KPC nəticəsi (redaktə oluna bilər)', height=135, key=edit_key)
-    # Editing invalidates earlier confirmation (important for reliable review).
-    validated_key = f'{identifier}_confirmed_text'
+    # Invalidate confirmation ONLY if the edited content actually changed.
+    # Old code compared to the *last confirmed* fingerprint; on each checkbox
+    # click Streamlit reran the script and reset the checkbox before rendering.
+    edit_digest_key = f'{identifier}_last_edited_digest'
     current_fingerprint = hashlib.sha256(edited.encode('utf-8')).hexdigest()
-    if st.session_state.get(validated_key) != current_fingerprint:
+    if st.session_state.get(edit_digest_key) != current_fingerprint:
         st.session_state[confirmed_key] = False
+        st.session_state[edit_digest_key] = current_fingerprint
     checked = st.checkbox(f'{label}: bütün KPC-ləri yoxladım, təsdiqləyirəm', key=confirmed_key)
-    if checked:
-        st.session_state[validated_key] = current_fingerprint
     return edited, bool(checked and edited.strip())
 
 

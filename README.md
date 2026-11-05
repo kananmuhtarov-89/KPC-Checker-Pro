@@ -1,4 +1,4 @@
-# KPC Checker Pro V9.2 — Multi-File OCR
+# KPC Checker Pro V9.3 — Multi-File OCR
 
 KPC yoxlama protokolu V6.2: siyahılar A/B/C; ən azı **iki siyahı** doldurulmalıdır. Uyğunluq üçün say/format, sıralanmış tam siyahı və `Counter` multiset müqayisəsi aparılır. Hər siyahıda mətn və ya **istənilən sayda fayl** seçilə bilər.
 
@@ -46,3 +46,7 @@ python -m unittest discover -s tests -v
 - `kpc_core.py` — deterministik normallaşdırma və 3 mərhələli müqayisə
 - `ocr_engine.py` — şəkil cədvəlində KPC sütunlarından namizədlər
 - `requirements.txt`, `packages.txt` — bulud asılılıqları
+
+
+## V9.3 düzəlişi
+Şəkil üzrə OCR təsdiq checkbox-u işarələnən anda artıq öz-özünə sönmür. Mətn redaktə ediləndə təsdiq yenidən tələb olunur.
