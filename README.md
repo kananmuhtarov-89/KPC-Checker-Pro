@@ -1,71 +1,31 @@
-# KPC Checker Pro
+# KPC Checker Pro V9 — Streamlit Cloud
 
-Üç siyahının (A/B/C) müqayisəsi üçün Streamlit tətbiqi. **V6.1 protokolu** saxlanılır; vizual tətbiq versiyası **V7.0**.
+**KPC V6.2 qaydaları:** A+B, A+C, B+C və ya A+B+C müqayisəsi; sıra önəmsiz; təkrar sayı vacibdir. Bütün 5 rəqəm ayrı-ayrılıqda uyğun olmalıdır. `KPC`, `KPÇ`, boşluqlar və artıq başlanğıc sıfırları nəzərə alınmır. 5-dən çox **əhəmiyyətli** rəqəm qəbul edilmir. 3 müstəqil Python yoxlaması: (1) say+format, (2) sıralanmış tam siyahı, (3) Counter multiset.
 
-## Funksiyalar
+## GitHub-a yerləşdirmə
 
-- Hər siyahıya mətn, `.txt`, `.csv`, `.xlsx` / `.xlsm`, `.png`, `.jpg`, `.jpeg`, `.webp` daxil etmə
-- Excel vərəqi və KPC sütununun seçilməsi
-- Şəkillərdən Tesseract OCR ilə ilkin oxuma və **məcburi insan təsdiqi**
-- KPC/KPÇ prefiksi və boşluqların silinməsi; solda artıq sıfırların qəbul edilməsi; 5 mövqenin dəqiq uyğunluğu
-- 3 nəzarət: **(1) say/format, (2) tam sıralanmış siyahılar, (3) `Counter` ilə təkrarlanma və fərq**
-- Uyğunsuz hər kod üçün A/B/C-dəki sayın göstərilməsi
-- Excel və TXT hesabatları; yoxlama nömrəsinin əl ilə idarə edilməsi
-- Proqram istifadəçi fayllarını diskə/bazaya yazmır; sessiya daxilində emal edir
+1. ZIP faylını kompüterdə **Extract All** ilə açın.
+2. GitHub repository-yə ZIP-i deyil, **içindəki faylları** yerləşdirin. `app.py`, `ocr_engine.py`, `kpc_core.py`, `requirements.txt`, `packages.txt` əsas qovluqda olmalıdır.
+3. Streamlit Community Cloud: repository seçin, branch `main`, main file `app.py`, Deploy.
+4. Mövcud tətbiqdirsə, GitHub-da köhnə `app.py`, `kpc_core.py`, `ocr_engine.py`, `requirements.txt`, `packages.txt` fayllarını yeni məzmunla əvəz edin; Streamlit yenilənəcək.
 
-## Lokal kompüterdə işlətmək
+## İstifadə
 
-Python 3.10+ və Tesseract OCR qurulur. Windows üçün [Tesseract OCR quraşdırma məlumatı](https://github.com/UB-Mannheim/tesseract/wiki). `tesseract` PATH-də olmalıdır.
+- A, B, C-dən ən az iki siyahını doldurun.
+- Hər siyahıda ayrıca **Mətn** və ya **Fayl** seçin. Fayl: PNG, JPG, WEBP, TXT, CSV, XLSX. **PDF yoxdur.**
+- Print Screen şəklini yalnız KPC və tarix cədvəlinin olduğu hissədən edin. OCR 3 KPC sütununu oxumağa çalışacaq, tarix sütunları nəzərə alınmır.
+- OCR nəticəsini **hər nömrə üzrə** orijinal ilə müqayisə edin. Yanlışları dəyişin, əskikləri əlavə edin və təsdiq qutusunu işarələyin. OCR boş qalırsa, nömrələri əllə həmin xanaya yaza bilərsiniz.
+- Yoxlama düyməsinə basın. Nəticə və fərqlər, təkrarlar görünəcək. TXT və fərq olduqda Excel hesabatı mümkündür.
+- Yoxlama № əl ilə idarə olunur; təkrar yoxlama nömrəni artırmır.
 
-```bash
-python -m venv .venv
-# Windows PowerShell:
-.venv\Scripts\Activate.ps1
-pip install -r requirements.txt
-streamlit run app.py
-```
+## Məxfilik — VACİB
 
-Brauzerdə açılan ünvana keç (adətən `http://localhost:8501`). Lokal işə salınanda məlumatlar öz kompüterində emal edilir.
+Public/private Streamlit Cloud fərq etmədən **yüklənən fayllar Streamlit serverində emal edilir**. Şəxsi məlumatlı sənədləri və ekran görüntülərini təşkilatın icazəsi olmadan Cloud-a yükləməyin. Yalnız KPC cədvəlini ehtiva edən, başqa şəxsi sahələri kəsilmiş screenshot istifadə edin; **KPC seriya nömrələri də kontekstdən asılı olaraq həssas iş məlumatı ola bilər.** Tam məxfi sənədlər üçün lokal Streamlit quraşdırın və `streamlit run app.py` istifadə edin. Proqramda xüsusi xarici OCR API yoxdur; bulud deployment-in özü yenə də üçüncü tərəfdə emaldır.
 
-## GitHub-a əlavə etmək
+## Test
 
-1. GitHub-da yeni, tercihen **private** repository yarat.
-2. ZIP-dən çıxarılan **`KPC_Checker_Pro` qovluğunun içindəki faylları** repository-nin kökünə yüklə. `app.py`, `requirements.txt`, `packages.txt`, `kpc_core.py`, `ocr_engine.py` eyni səviyyədə olmalıdır.
-3. GitHub-a yüklənmiş fayllara şəxsi KPC siyahıları və real ekran görüntüləri əlavə etmə.
+`python -m unittest discover -s tests -v`
 
-## Streamlit Community Cloud deploy
+## OCR qeydləri
 
-1. [share.streamlit.io](https://share.streamlit.io/) saytına GitHub hesabı ilə daxil ol.
-2. **Create app / Deploy an app** seç; repository və branch seç.
-3. **Main file path:** `app.py`.
-4. Deploy et. `requirements.txt` Python paketlərini, `packages.txt` isə Linux-da Tesseract OCR-i quraşdıracaq.
-5. İlk girişdə 3 siyahını doldur; şəkil yüklənibsə OCR mətni orijinalla tutuşdurub təsdiqlə; sonra **Yoxla**.
-
-**Məxfilik:** Community Cloud serverində fayllar emal olunur. Tətbiqin özündə fayllar diskə yazılmasa da, bunu tam lokal məxfilik zəmanəti kimi qəbul etmə. Həssas məlumat üçün lokal rejimi seç. Buludda public tətbiqə anonim istifadəçilərin girişi ola bilər; giriş nəzarətini ayrıca planlaşdır.
-
-## Qaydalar və məhdudiyyətlər
-
-- `KPC018569`, `KPC 018569`, `18569` → `18569`.
-- `00000123` → `00123`. `123456` rədd edilir (6 əhəmiyyətli rəqəm).
-- Yalnız 5 mövqenin hamısı uyğun gələndə eyni sayılır. Təxmini düzəltmə, yerdəyişmə yoxdur.
-- **OCR zəmanətli deyil:** OCR çıxışında tarix, ad və digər məlumatlar görünə bilər; hamısını əl ilə silib/təsdiq et. Şübhəli nömrənin yoxlanması bitmədən “Uyğun” nəticəsini qəbul etmə.
-- Üç yoxlama **eyni giriş mətnindən** istifadə edir; buna görə mənbədəki yanlış OCR rəqəmini avtomatik aşkarlaya bilməz.
-- Sütun başlıqları daxil edilmişsə əl ilə silinməlidir; xətalı token nəticəni bloklayır.
-- Cari sessiyada yoxlama nömrəsi əl ilə seçilir; persistent tarixçə saxlanılmır.
-
-## Testlər
-
-```bash
-pip install pytest
-pytest -q
-```
-
-## Layihə strukturu
-
-- `app.py` — interfeys, fayl yükləmə, hesabat
-- `kpc_core.py` — yoxlama qaydaları, format və `Counter`
-- `ocr_engine.py` — OCR oxuma
-- `requirements.txt` — Python asılılıqları
-- `packages.txt` — Linux üçün Tesseract
-- `.streamlit/config.toml` — interfeys ayarları
-- `tests/test_core.py` — avtomatik testlər
+Tesseract şəkillərdəki simvolları səhv oxuya, təkrarlaya və ya buraxa bilər. OCR sütunlara görə oxumaq üçün cədvəldəki şaquli xətləri tapır; tapılmasa eninə görə təxmini bölgülərdən istifadə edir. Nəticə **avtomatik təsdiqlənmir**. Screenshot mümkün qədər yalnız cədvəl olsun, aydın və yüksək keyfiyyətli olsun. Qeyri-standart cədvəllər əl ilə yoxlanmalıdır.

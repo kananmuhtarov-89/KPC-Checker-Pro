@@ -1,13 +1,13 @@
-"""Deterministic KPC V6.1 comparison engine. No OCR or UI dependencies."""
+"""KPC V6.2: strict, deterministic 2-or-3-list multiset audit."""
 from __future__ import annotations
 from collections import Counter
 from dataclasses import dataclass, field
-import re
+from itertools import combinations
 from typing import Mapping
+import re
 
 PREFIX = re.compile(r"^(?:KPC|KPÇ)\s*", re.IGNORECASE)
-VALID_DIGITS = re.compile(r"^[0-9]+$")
-
+CODE = re.compile(r"^[0-9]+$")
 
 @dataclass
 class ParsedList:
@@ -21,79 +21,56 @@ class ParsedList:
         return Counter(self.codes)
 
 
-def normalize(raw: str) -> str:
-    """Remove KPC/KPÇ & spaces; pad to five; reject >5 significant digits.
-
-    Examples: KPC018569 -> 18569; 23 -> 00023; 00000123 -> 00123.
-    """
-    value = PREFIX.sub('', str(raw).strip())
-    value = re.sub(r'\s+', '', value)
-    if not value or not VALID_DIGITS.fullmatch(value):
-        raise ValueError('yalnız KPC prefiksi və rəqəmlər qəbul edilir')
-    significant = value.lstrip('0')
-    if len(significant) > 5:
+def normalize(token: str) -> str:
+    s = PREFIX.sub('', str(token).strip())
+    s = re.sub(r'\s+', '', s)
+    if not CODE.fullmatch(s):
+        raise ValueError('KPC/KPÇ prefiksi və rəqəmlərdən başqa simvol')
+    meaningful = s.lstrip('0')
+    if len(meaningful) > 5:
         raise ValueError('5-dən çox əhəmiyyətli rəqəm')
-    return significant.zfill(5)
+    return meaningful.zfill(5)
 
 
-def parse_text(name: str, text: str) -> ParsedList:
-    """Strict one-token-per-separator parser. Never guesses or repairs digits.
-
-    Commas, semicolons, vertical bars, newlines and tabs separate tokens.
-    Multiple space separated code items are also supported without breaking
-    'KPC 01234' into two tokens.
-    """
-    parsed = ParsedList(name=name)
-    # Handle pasted markdown tables, headings; avoid silently accepting dates.
-    text = str(text).replace('\ufeff', '')
-    chunks = re.split(r'[,;\n\r\t|]+', text)
-    for chunk in chunks:
-        chunk = chunk.strip()
-        if not chunk or re.fullmatch(r'[:\-\s]+', chunk):
+def parse_text(name: str, value: str) -> ParsedList:
+    result = ParsedList(name)
+    text = str(value).replace('\ufeff', '').replace('\u200b', '')
+    # Pasted markdown tables are permitted; only a pure Markdown separator is skipped.
+    lines = re.split(r'[,;\n\r\t|]+', text)
+    for line in lines:
+        line = line.strip()
+        if not line or re.fullmatch(r'[-:\s]+', line):
             continue
-        # whitespace between separate numbers/prefixed codes
-        parts = re.findall(r'(?:KPC|KPÇ)\s*\d+|\d+|[^\s]+', chunk, flags=re.I)
-        # If the line is a prose sentence, mark non-numeric words invalid;
-        # never cherry-pick only numeric fragments as a successful input.
+        parts = re.findall(r'(?:KPC|KPÇ)\s*\d+|\d+|\S+', line, flags=re.I)
         for part in parts:
-            parsed.tokens += 1
+            result.tokens += 1
             try:
-                parsed.codes.append(normalize(part))
+                result.codes.append(normalize(part))
             except ValueError:
-                parsed.invalid.append(part)
-    return parsed
+                result.invalid.append(part)
+    return result
 
 
-def compare(lists: Mapping[str, ParsedList]) -> dict:
-    """Three independent checks: count/format, full sorted lists, Counter.
-
-    All three inputs must exist and be valid. No partial input can be 'match'.
-    """
-    if set(lists) != {'A', 'B', 'C'}:
-        raise ValueError('A, B və C siyahılarının hamısı tələb olunur')
-    count_format = (
-        all(not p.invalid and p.tokens > 0 and p.tokens == len(p.codes) for p in lists.values())
-        and len({len(p.codes) for p in lists.values()}) == 1
-    )
-    sorted_equal = sorted(lists['A'].codes) == sorted(lists['B'].codes) == sorted(lists['C'].codes)
-    counters = {k: v.counts for k, v in lists.items()}
-    counter_equal = counters['A'] == counters['B'] == counters['C']
-    valid = all(not p.invalid and p.tokens > 0 for p in lists.values())
-    match = count_format and sorted_equal and counter_equal and valid
-
-    # For each code, report every list's actual occurrence count whenever they differ.
-    mismatch_rows = []
-    for code in sorted(set().union(*(set(c) for c in counters.values()))):
-        quantities = [counters[k][code] for k in ('A','B','C')]
-        if len(set(quantities)) > 1:
-            mismatch_rows.append({'KPC': code, 'A': quantities[0], 'B': quantities[1], 'C': quantities[2]})
-    duplicates = {k: {code: qty for code, qty in sorted(c.items()) if qty > 1} for k, c in counters.items()}
+def compare(inputs: Mapping[str, ParsedList]) -> dict:
+    names = [k for k in ('A','B','C') if k in inputs]
+    if len(names) < 2:
+        raise ValueError('Minimum 2 siyahı tələb olunur')
+    clean = all(not inputs[k].invalid and inputs[k].tokens == len(inputs[k].codes) and inputs[k].tokens > 0 for k in names)
+    size_equal = len({len(inputs[k].codes) for k in names}) == 1
+    check1 = clean and size_equal
+    check2 = all(sorted(inputs[a].codes) == sorted(inputs[b].codes) for a,b in combinations(names,2))
+    cnt = {k: inputs[k].counts for k in names}
+    check3 = all(cnt[a] == cnt[b] for a,b in combinations(names,2))
+    diff = []
+    for code in sorted(set().union(*(set(cnt[k]) for k in names))):
+        qty = {k: cnt[k][code] for k in names}
+        if len(set(qty.values())) > 1:
+            diff.append({'KPC':code, **qty})
     return {
-        'match': match, 'ready': valid,
-        'checks': {'count_and_format': count_format, 'sorted_full_comparison': sorted_equal,
-                   'counter_multiset': counter_equal},
-        'sizes': {k: len(v.codes) for k,v in lists.items()},
-        'invalid': {k: list(v.invalid) for k,v in lists.items()},
-        'duplicates': duplicates,
-        'differences': mismatch_rows,
+        'names':names, 'match':check1 and check2 and check3,
+        'checks': {'say_və_format':check1,'sıralanmış_tam_müqayisə':check2,'Counter_multiset':check3},
+        'sizes':{k:len(inputs[k].codes) for k in names},
+        'invalid':{k:inputs[k].invalid for k in names},
+        'duplicates':{k:{c:n for c,n in sorted(cnt[k].items()) if n>1} for k in names},
+        'differences':diff,
     }
