@@ -29,3 +29,20 @@ class KpcAuditTest(unittest.TestCase):
         self.assertEqual(x.codes,['39617','39618'])
 
 if __name__=='__main__': unittest.main()
+
+class MultiFileMergeTests(unittest.TestCase):
+    def test_concatenated_files_keep_duplicates(self):
+        image1 = 'KPC039617\n039618'
+        image2 = '39618\n39619'
+        merged = parse_text('C', '\n'.join([image1, image2]))
+        self.assertEqual(len(merged.codes), 4)
+        self.assertEqual(merged.counts['39618'], 2)
+        other = parse_text('A', '39617, 39618, 39618, 39619')
+        self.assertTrue(compare({'A': other, 'C': merged})['match'])
+
+    def test_missing_number_in_second_image(self):
+        a = parse_text('A', '39617 39618 39619')
+        c = parse_text('C', '\n'.join(['39617','39618']))
+        result = compare({'A': a, 'C': c})
+        self.assertFalse(result['match'])
+        self.assertEqual(result['differences'][0]['KPC'], '39619')
