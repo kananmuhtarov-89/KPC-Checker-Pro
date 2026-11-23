@@ -51,10 +51,52 @@ def _read_cell(a):
     if count<3 or count<=len(votes)-count:return None,'conflict '+repr(raw)
     return best,None
 
+def _deskew_grid(a):
+    """Try original plus rotations inferred from long table rules; no guessed serials."""
+    h,w=a.shape
+    edge=cv2.Canny(a,60,160)
+    lines=cv2.HoughLinesP(edge,1,np.pi/1800,threshold=max(35,w//15),
+                          minLineLength=int(w*.30),maxLineGap=25)
+    angles=[]
+    if lines is not None:
+        for segment in lines[:,0]:
+            x1,y1,x2,y2=map(int,segment)
+            deg=float(np.degrees(np.arctan2(y2-y1,x2-x1)))
+            if abs(deg)<12 and abs(x2-x1)>w*.30:
+                angles.append((deg,abs(x2-x1)))
+    candidates=[0.0]
+    if angles:
+        angles.sort(key=lambda v:v[0])
+        total=sum(v[1] for v in angles); acc=0
+        median=0
+        for ang,weight in angles:
+            acc+=weight
+            if acc>=total/2:
+                median=ang;break
+        # OpenCV positive rotation straightens a line sloping downward right.
+        candidates.extend([round(median),median,median-.4,median+.4])
+    candidates.extend([-2.0,2.0,-1.0,1.0,-3.0,3.0])
+    best=None
+    for angle in dict.fromkeys(round(v,2) for v in candidates):
+        if abs(angle)>10:continue
+        if angle==0:z=a
+        else:
+            M=cv2.getRotationMatrix2D((w/2,h/2),angle,1)
+            z=cv2.warpAffine(a,M,(w,h),flags=cv2.INTER_LINEAR,
+                             borderMode=cv2.BORDER_CONSTANT,borderValue=255)
+        grid=_grid(z)
+        if grid is None:continue
+        xs,ys=grid
+        # Prefer complete rows; rotation can make the header rule disappear.
+        score=(len(ys),len(xs))
+        if best is None or score>best[0]:best=(score,z,grid,angle)
+    if best is None:return a,None,0.0
+    return best[1],best[2],best[3]
+
 def extract_image(image_data:bytes):
     im=Image.open(BytesIO(image_data)).convert('RGB')
     a=np.array(im.convert('L'))
-    grid=_grid(a)
+    a,grid,rotation=_deskew_grid(a)
     if grid is None:
         return dict(text='',numbers=[],columns=[],method='Grid not reliably detected',warnings=['Cədvəl sərhədləri aşkarlanmadı; təsdiqlənməmiş rəqəm qaytarılmadı'],expected=None,original_size=im.size,review_required=True)
     xs,ys=grid; pairs=(len(xs)-1)//2
@@ -69,4 +111,4 @@ def extract_image(image_data:bytes):
             elif err=='blank':blank+=1
             else:warnings.append(f'KPC sütunu {j+1}, sətir {r}: {err}')
         cols.append({'values':values,'raw':'\n'.join(values)});numbers.extend(values)
-    return dict(text='\n'.join(numbers),numbers=numbers,columns=cols,method=f'{pairs} KPC sütunu, xana OCR',warnings=warnings,expected=pairs*(len(ys)-2),original_size=im.size,review_required=True,inspected_cells=pairs*(len(ys)-2),blank_cells=blank)
+    return dict(text='\n'.join(numbers),numbers=numbers,columns=cols,method=f'{pairs} KPC sütunu, xana OCR, düzləndirmə {rotation:+.2f}°',warnings=warnings,expected=pairs*(len(ys)-2),original_size=im.size,review_required=True,inspected_cells=pairs*(len(ys)-2),blank_cells=blank)

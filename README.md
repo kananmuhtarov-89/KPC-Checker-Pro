@@ -70,3 +70,10 @@ python -m unittest discover -s tests -v
 - 300 kodlu mətn müqayisəsi test olunub; 300 kodlu şəkil OCR-si hələ ayrıca real test tələb edir.
 - OCR təsdiqi yenə istifadəçinin yoxlamasını tələb edir. Naməlum şablonlarda etibarsız nəticə əvəzinə xəbərdarlıq verilir.
 - Lokal test: `python -m pytest -q`.
+
+### V14 (2026-11-23)
+- Automatic line-angle detection and deskew before grid OCR.
+- Tested on 3-column skewed screenshot: 13/13 serials, 2 empty cells, 0 dates.
+- Regression tested on two 4-column screenshots: 19/19 serials each.
+- OCR does not silently confirm results; user review remains required.
+- 300-entry text comparisons are supported; 300-entry image OCR is not yet empirically verified.
