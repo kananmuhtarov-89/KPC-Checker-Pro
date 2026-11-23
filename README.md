@@ -50,3 +50,23 @@ python -m unittest discover -s tests -v
 
 ## V9.3 düzəlişi
 Şəkil üzrə OCR təsdiq checkbox-u işarələnən anda artıq öz-özünə sönmür. Mətn redaktə ediləndə təsdiq yenidən tələb olunur.
+
+## V10.0 OCR təhlükəsizlik yenilənməsi
+- 6/8 sütunlu KPC/Tarix cədvəlləri üçün ayrıca xana OCR və zəif cədvəl xətləri üçün ehtiyat sütun OCR.
+- Tarix sütunları oxunmur, şübhəli/oxunmayan sahələr diaqnostikada göstərilir.
+- Ehtiyat OCR də səhv edə bilər: şəkil nəticəsi insan tərəfindən təsdiqlənmədən müqayisəyə buraxılmır.
+- Test şəkillərində birinci nümunə 19 namizəd, ikinci 18 namizəd verdi, lakin səhv rəqəmlər də oldu. Bu, avtomatik dəqiqliyin təminatı deyil; diaqnostika və əl ilə tutuşdurma məcburidir.
+
+## V11 təhlükəsizlik qeydi
+- 300+ kodun mətn müqayisəsi test olunur. Şəkildən 300 kodun etibarlı çıxarılması görüntünün ölçüsündən və cədvəl quruluşundan asılıdır.
+- OCR şübhəli cədvəldə nəticə uydurmur, əllə yoxlama tələb edir.
+- 23.11.2026 tarixli iki kiçik ekran şəklində bu konservativ OCR avtomatik nəticə vermədi. Bu, dəqiqlik uğuru deyil; yanlış müsbət nəticələrin qarşısını alma tədbiridir.
+- Daha yüksək dəqiqlik üçün gələcək mərhələdə xananın lokalizasiyası və OCR alternativi üzərində işləmək lazımdır.
+
+## V12: problemli 2 şəkil üzrə təsdiqlənmiş OCR
+- OCR 4 KPC + 4 tarix sütunlu cədvəli avtomatik aşkarlayır; tarix sütunları oxunmur.
+- Orijinal 842×201 və 490×119 ölçülü şəkillər `tests/fixtures/` içindədir.
+- Hər iki şəkil üçün 19/19 düzgün KPC (5 rəqəmli normallaşdırılmış) və 1 boş xana testlə təsdiqlənib.
+- 300 kodlu mətn müqayisəsi test olunub; 300 kodlu şəkil OCR-si hələ ayrıca real test tələb edir.
+- OCR təsdiqi yenə istifadəçinin yoxlamasını tələb edir. Naməlum şablonlarda etibarsız nəticə əvəzinə xəbərdarlıq verilir.
+- Lokal test: `python -m pytest -q`.

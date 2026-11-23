@@ -1,4 +1,4 @@
-"""KPC Checker Pro V9.3 — 2/3 lists, multiple files per list, OCR confirmations."""
+"""KPC Checker Pro V12.0 — 2/3 lists, multiple files per list, OCR confirmations."""
 from __future__ import annotations
 import hashlib
 import io
@@ -9,8 +9,8 @@ import pandas as pd
 import streamlit as st
 from kpc_core import parse_text, compare
 
-st.set_page_config(page_title='KPC Checker Pro V9.3', page_icon='🔎', layout='wide')
-st.title('🔎 KPC Checker Pro V9.3')
+st.set_page_config(page_title='KPC Checker Pro V12.0', page_icon='🔎', layout='wide')
+st.title('🔎 KPC Checker Pro V12.0')
 st.caption('KPC V6.2 · A/B/C-dən istənilən ikisi və ya üçü · Hər siyahıya çoxsaylı şəkil / TXT / CSV / Excel')
 st.info('Hər siyahı üçün **Mətn** və ya **Fayllar** seç. Fayllar rejimində bir neçə şəkil və ya başqa fayl yükləyə bilərsən. PDF qəbul edilmir.')
 
@@ -70,7 +70,8 @@ def image_text(data: bytes, label: str, identifier: str) -> tuple[str, bool]:
             with st.spinner(f'{label}: KPC sütunları oxunur...'):
                 output = extract_image(data)
             st.session_state[edit_key] = output['text']
-            st.session_state[info_key] = f"{len(output['numbers'])} KPC namizədi · {output['method']}"
+            st.session_state[info_key] = f"{len(output['numbers'])} KPC namizədi · {output['method']} · {output.get('inspected_cells', '?')} xana yoxlanıldı · {output.get('blank_cells', 0)} boş xana"
+            st.session_state[f'{identifier}_warnings'] = output.get('warnings', [])
         except Exception as exc:
             st.session_state[edit_key] = ''
             st.session_state[info_key] = f'OCR XƏTASI: {type(exc).__name__}: {exc}'
@@ -83,7 +84,12 @@ def image_text(data: bytes, label: str, identifier: str) -> tuple[str, bool]:
         st.success('OCR: ' + info)
     else:
         st.warning('OCR nəticəsi boşdur. Təkrar oxu və ya nömrələri əl ilə daxil et.')
-    st.caption('Yalnız bu şəklin KPC nömrələrini saxla; tarixləri sil. Şəkildəki bütün nömrələri orijinal ilə tutuşdur.')
+    warnings = st.session_state.get(f'{identifier}_warnings', [])
+    if warnings:
+        st.warning(f'{len(warnings)} şübhəli/oxunmayan xana var. Nəticə tam olmaya bilər.')
+        with st.expander('OCR diaqnostikası — yoxlanmalı xanalar'):
+            st.text('\n'.join(warnings))
+    st.caption('300+ KPC də ola bilər. Hər nömrəni və ümumi sayı şəkillə tutuşdur; tarixləri sil. OCR nəticəsi avtomatik təsdiq edilmir.')
     edited = st.text_area(f'{label}: KPC nəticəsi (redaktə oluna bilər)', height=135, key=edit_key)
     # Invalidate confirmation ONLY if the edited content actually changed.
     # Old code compared to the *last confirmed* fingerprint; on each checkbox
