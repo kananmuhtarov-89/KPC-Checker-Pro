@@ -1,0 +1,7 @@
+V13 build 20261123-grid4
+1. GitHub repo-nun Streamlit-in istifadə etdiyi branch-ına app.py, ocr_engine.py, kpc_core.py, requirements.txt, packages.txt və pytest.ini fayllarını köçürün.
+2. Streamlit Cloud -> Manage app -> Reboot app.
+3. Səhifənin yuxarısında BUILD 20261123-grid4 yazısını yoxlayın. Yazı yoxdursa köhnə versiya işləyir.
+4. 2.png və Screenshot 2026-11-23 104746.png fayllarını ayrı-ayrılıqda yoxlayın. Gözlənilən: 4 KPC sütunu, 20 xana, 1 boş xana, 19 KPC namizədi.
+5. Kodun yerli testi: python -m pytest -q
+Qeyd: 300 nömrəlik real OCR şəkli bu paketlə yoxlanılmayıb. 300 nömrəlik mətn müqayisəsi testdə mövcuddur. Hər OCR nəticəsi əl ilə təsdiqlənməlidir.

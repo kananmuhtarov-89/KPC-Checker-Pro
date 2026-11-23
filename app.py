@@ -1,4 +1,4 @@
-"""KPC Checker Pro V12.0 — 2/3 lists, multiple files per list, OCR confirmations."""
+"""KPC Checker Pro V13.0 — 2/3 lists, multiple files per list, OCR confirmations."""
 from __future__ import annotations
 import hashlib
 import io
@@ -9,8 +9,9 @@ import pandas as pd
 import streamlit as st
 from kpc_core import parse_text, compare
 
-st.set_page_config(page_title='KPC Checker Pro V12.0', page_icon='🔎', layout='wide')
-st.title('🔎 KPC Checker Pro V12.0')
+st.set_page_config(page_title='KPC Checker Pro V13.0', page_icon='🔎', layout='wide')
+st.title('🔎 KPC Checker Pro V13.0')
+st.caption('BUILD 20261123-grid4 — Bu yazı görünmürsə, köhnə versiya işləyir.')
 st.caption('KPC V6.2 · A/B/C-dən istənilən ikisi və ya üçü · Hər siyahıya çoxsaylı şəkil / TXT / CSV / Excel')
 st.info('Hər siyahı üçün **Mətn** və ya **Fayllar** seç. Fayllar rejimində bir neçə şəkil və ya başqa fayl yükləyə bilərsən. PDF qəbul edilmir.')
 
@@ -70,7 +71,7 @@ def image_text(data: bytes, label: str, identifier: str) -> tuple[str, bool]:
             with st.spinner(f'{label}: KPC sütunları oxunur...'):
                 output = extract_image(data)
             st.session_state[edit_key] = output['text']
-            st.session_state[info_key] = f"{len(output['numbers'])} KPC namizədi · {output['method']} · {output.get('inspected_cells', '?')} xana yoxlanıldı · {output.get('blank_cells', 0)} boş xana"
+            st.session_state[info_key] = f"{len(output['numbers'])} KPC namizədi · {output['method']} · {output.get('inspected_cells', '?')} xana yoxlanıldı · {output.get('blank_cells', 0)} boş xana · BUILD 20261123-grid4"
             st.session_state[f'{identifier}_warnings'] = output.get('warnings', [])
         except Exception as exc:
             st.session_state[edit_key] = ''
